@@ -179,10 +179,14 @@ class LocalUpdate(object):
                 # Feature extraction
                 # Prediction by concatenating zero vectors (dummy vectors).
                 # We do not use the prediction here.
+                if self.args.dataset == 'images':
+                    z_l = model_l.extract(data)
+                    z_b = model_b.extract(data)
 
-                z_b = []
+               
                 # Use this only for reproducing CIFARC10 of LfF
-                if self.args.use_resnet20:
+                elif self.args.use_resnet20:
+                    z_b = []
                     hook_fn = model_b.layer3.register_forward_hook(self.concat_dummy(z_b))
                     data = torch.transpose(data, 1, 3)
                     _ = model_b(data)

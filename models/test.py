@@ -52,16 +52,20 @@ def evaluate_ours( args, model_b, model_l, x_test,y_test, model='label'):
         label = label.to(args.device)
 
         with torch.no_grad():
-            z_l, z_b = [], []
-            data = torch.transpose(data, 1, 3)
-            hook_fn = model_l.avgpool.register_forward_hook(concat_dummy(z_l))
-            _ = model_l(data)
-            hook_fn.remove()
-            z_l = z_l[0]
-            hook_fn = model_b.avgpool.register_forward_hook(concat_dummy(z_b))
-            _ = model_b(data)
-            hook_fn.remove()
-            z_b = z_b[0]
+            if args.dataset == 'images':
+                z_l = model_l.extract(data)
+                z_b = model_b.extract(data)
+            else:
+                z_l, z_b = [], []
+                data = torch.transpose(data, 1, 3)
+                hook_fn = model_l.avgpool.register_forward_hook(concat_dummy(z_l))
+                _ = model_l(data)
+                hook_fn.remove()
+                z_l = z_l[0]
+                hook_fn = model_b.avgpool.register_forward_hook(concat_dummy(z_b))
+                _ = model_b(data)
+                hook_fn.remove()
+                z_b = z_b[0]
             z_origin = torch.cat((z_l, z_b), dim=1)
             if model == 'bias':
                 pred_label = model_b.fc(z_origin)
@@ -73,6 +77,8 @@ def evaluate_ours( args, model_b, model_l, x_test,y_test, model='label'):
             total_num += correct.shape[0]
 
     accs = total_correct / float(total_num)
+    model_b.train()
+    model_l.train()
 
     return accs
 
